@@ -34,25 +34,43 @@ def handle_peer(conn):
             log_message(f"Join request from peer {new_peer_port}")
 
             # GUI approval popup
-            def approve():
-                known_peers.add((HOST, new_peer_port))
-                conn.sendall(b"ALLOW")
-                update_peers_list()
-                join_request_window.destroy()
+            
+            def show_popup():
+                join_request_window = tk.Toplevel(root)
+                join_request_window.title(f"Join request from {new_peer_port}")
 
-            def deny():
-                conn.sendall(b"DENY")
-                join_request_window.destroy()
+                def approve():
+                    known_peers.add((HOST, new_peer_port))
+                    conn.sendall(b"ALLOW")
+                    conn.close()
+                    update_peers_list()
+                    join_request_window.destroy()
 
-            join_request_window = tk.Toplevel(root)
-            join_request_window.title(f"Join request from {new_peer_port}")
-            tk.Label(join_request_window, text=f"Peer {new_peer_port} wants to join").pack(padx=10, pady=10)
-            tk.Button(join_request_window, text="Allow", command=approve).pack(side=tk.LEFT, padx=10, pady=10)
-            tk.Button(join_request_window, text="Deny", command=deny).pack(side=tk.RIGHT, padx=10, pady=10)
+                def deny():
+                    conn.sendall(b"DENY")
+                    conn.close()
+                    join_request_window.destroy()
+
+                tk.Label(
+                    join_request_window,
+                    text=f"Peer {new_peer_port} wants to join"
+                ).pack(padx=10, pady=10)
+
+                tk.Button(
+                    join_request_window,
+                    text="Allow",
+                    command=approve
+                ).pack(side=tk.LEFT, padx=10, pady=10)
+
+                tk.Button(
+                    join_request_window,
+                    text="Deny",
+                    command=deny
+                ).pack(side=tk.RIGHT, padx=10, pady=10)
+
+        root.after(0, show_popup)
     except Exception as e:
         log_message(f"Error handling peer: {e}")
-    finally:
-        conn.close()
 
 def listen(server_socket):
     while True:
